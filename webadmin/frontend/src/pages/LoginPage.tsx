@@ -10,6 +10,33 @@ const LoginPage: React.FC = () => {
   const [fallbackResult, setFallbackResult] = useState<any>(null);
 
   useEffect(() => {
+    // Безопасная диагностика наличия Telegram API
+    let tgApiStatus = 'window.Telegram: ';
+    if (typeof window !== "undefined" && 'Telegram' in window) {
+      tgApiStatus += 'есть';
+      if ((window as any).Telegram && (window as any).Telegram.WebApp) {
+        tgApiStatus += ', window.Telegram.WebApp: есть';
+      } else {
+        tgApiStatus += ', window.Telegram.WebApp: нет';
+      }
+    } else {
+      tgApiStatus += 'нет';
+    }
+    setDebug((prev: any) => ({...prev, tgApiStatus }));
+
+    // Диагностика: выводим Telegram API в консоль и на экран
+    try {
+      // eslint-disable-next-line no-console
+      console.log('window.Telegram:', window.Telegram);
+      // eslint-disable-next-line no-console
+      console.log('window.Telegram.WebApp:', window.Telegram?.WebApp);
+      (window as any).telegramDebug = {
+        Telegram: window.Telegram,
+        TelegramWebApp: window.Telegram?.WebApp,
+        windowKeys: Object.keys(window),
+      };
+    } catch (e) {}
+
     try {
       const win: any = window;
       const tg = win.Telegram?.WebApp;
@@ -96,8 +123,11 @@ const LoginPage: React.FC = () => {
         </pre>
       )}
       <pre style={{ background: '#f6f6f6', padding: 12, borderRadius: 8, fontSize: 13, overflowX: 'auto', marginBottom: 18 }}>
-        {debug ? JSON.stringify(debug, null, 2) : 'Сбор debug-информации...'}
+        {debug ? JSON.stringify(debug, null, 2) : '\u0421\u0431\u043e\u0440 debug-\u0438\u043d\u0444\u043e\u0440\u043c\u0430\u0446\u0438\u0438...'}
       </pre>
+      <div style={{marginTop: 10, color: '#a67c00', fontSize: 15}}>
+        {debug?.tgApiStatus}
+      </div>
       <div style={{marginTop: 24, color: '#888', fontSize: 13}}>
         Запустите через Telegram-бота, чтобы увидеть полноценную авторизацию. <br />
         Если статус orange — TelegramWebviewProxy найден, но WebApp API нет (старый клиент или ограничения Telegram).<br />

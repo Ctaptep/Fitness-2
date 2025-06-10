@@ -401,30 +401,53 @@ const LoginPage: React.FC = () => {
       </div>
 
       {status === 'no-tg' && (
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', marginTop: 32 }}>
           <a
-            href="https://oauth.telegram.org/auth"
+            href="https://t.me/YourBot?start=webapp"
             target="_blank"
             rel="noopener noreferrer"
             style={{
               display: 'inline-block',
-              padding: '14px 28px',
+              padding: '18px 32px',
               background: '#229ED9',
               color: '#fff',
-              borderRadius: 8,
-              fontWeight: 600,
+              borderRadius: 10,
+              fontWeight: 900,
+              letterSpacing: 1,
               textDecoration: 'none',
-              fontSize: 18,
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              fontSize: 22,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.13)',
+              margin: '24px 0',
               transition: 'all 0.2s'
             }}
             onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseOut={(e) => e.currentTarget.style.transform = 'none'}
           >
-            Войти через Telegram
+            ОТКРЫТЬ ЧЕРЕЗ TELEGRAM-БОТА
           </a>
-          <div style={{ marginTop: 16, color: '#718096' }}>
-            Будет выполнена стандартная OAuth-авторизация
+          <div style={{
+            margin: '24px auto',
+            maxWidth: 450,
+            background: '#fffbe6',
+            border: '2px solid #ffd700',
+            borderRadius: 12,
+            padding: 18,
+            color: '#b7791f',
+            fontSize: 18,
+            fontWeight: 600,
+            lineHeight: 1.5
+          }}>
+            <b>Внимание!</b><br/>
+            Для работы мини-приложения откройте его <u>только через кнопку</u> в Telegram-боте.<br/>
+            <br/>
+            <ol style={{textAlign:'left', margin:'12px auto 0', paddingLeft: 24}}>
+              <li>Перейдите по кнопке выше (или найдите вашего бота в Telegram).</li>
+              <li>Нажмите кнопку <b>“Открыть WebApp”</b> в сообщении от бота.</li>
+              <li>Мини-приложение откроется внутри Telegram с поддержкой всех функций.</li>
+            </ol>
+            <div style={{marginTop:12, fontSize:15, color:'#c53030'}}>
+              Если вы открываете сайт вручную или через web.telegram.org — Telegram API работать не будет!
+            </div>
           </div>
         </div>
       )}

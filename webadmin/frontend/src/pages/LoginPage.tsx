@@ -10,27 +10,34 @@ const LoginPage: React.FC = () => {
   const [fallbackResult, setFallbackResult] = useState<any>(null);
 
   useEffect(() => {
-    // Используем только TelegramWebviewProxy
-    let tgProxy: any = null;
-    let proxyMethods: string[] = [];
+    // Поддержка и WebApp API (мобильный Telegram), и TelegramWebviewProxy (старый Desktop API)
     let debugInfo: any = {
       userAgent: navigator.userAgent,
       location: window.location.href,
       referrer: document.referrer,
+      telegramWebAppPresent: false,
+      telegramWebAppKeys: null,
       telegramWebviewProxyPresent: false,
-      telegramWebviewProxyType: null,
       telegramWebviewProxyKeys: null,
       windowKeys: Object.keys(window),
       isIframe: window.self !== window.top,
     };
-    if (typeof window !== "undefined" && 'TelegramWebviewProxy' in window) {
-      tgProxy = (window as any).TelegramWebviewProxy;
+    const win: any = window;
+    const tgWebApp = win.Telegram?.WebApp;
+    const tgProxy = win.TelegramWebviewProxy;
+    if (tgWebApp) {
+      debugInfo.telegramWebAppPresent = true;
+      debugInfo.telegramWebAppKeys = Object.keys(tgWebApp);
+      setStatus('tg-webapp');
+      setError(null);
+      // Здесь можно добавить авторизацию через WebApp API (initData, user info и т.д.)
+      // Например:
+      setDebug((prev: any) => ({ ...prev, tgWebAppInitData: tgWebApp.initData, tgWebAppUser: tgWebApp.initDataUnsafe?.user }));
+    } else if (tgProxy) {
       debugInfo.telegramWebviewProxyPresent = true;
-      debugInfo.telegramWebviewProxyType = getType(tgProxy);
-      debugInfo.telegramWebviewProxyKeys = Object.keys(tgProxy || {});
+      debugInfo.telegramWebviewProxyKeys = Object.keys(tgProxy);
       setStatus('proxy-fallback');
       setError('Авторизация через TelegramWebviewProxy...');
-      // Попытка получить userId через invoke/sendData (устаревший способ)
       try {
         if (typeof tgProxy.postEvent === 'function') {
           tgProxy.postEvent('web_app_request_data', '{}');
@@ -57,8 +64,8 @@ const LoginPage: React.FC = () => {
       window.addEventListener('message', handler);
       return () => window.removeEventListener('message', handler);
     } else {
-      setStatus('no-tg-proxy');
-      setError('Ошибка: TelegramWebviewProxy не найден. Откройте через Telegram Desktop.');
+      setStatus('no-tg');
+      setError('Ошибка: Откройте через Telegram-клиент (мобильный или Desktop).');
     }
     setDebug(debugInfo);
   }, []);

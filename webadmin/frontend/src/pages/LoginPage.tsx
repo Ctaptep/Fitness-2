@@ -10,97 +10,57 @@ const LoginPage: React.FC = () => {
   const [fallbackResult, setFallbackResult] = useState<any>(null);
 
   useEffect(() => {
-    // Расширенная диагностика Telegram WebApp окружения
-    let tgApiStatus = '';
+    // Используем только TelegramWebviewProxy
+    let tgProxy: any = null;
     let proxyMethods: string[] = [];
-    let initData = null;
-    if (typeof window !== "undefined" && 'Telegram' in window && (window as any).Telegram?.WebApp) {
-      tgApiStatus = 'WebApp API найден';
-      initData = (window as any).Telegram.WebApp.initData;
-    } else if (typeof window !== "undefined" && 'TelegramWebviewProxy' in window) {
-      tgApiStatus = 'WebApp API не найден, но найден TelegramWebviewProxy (fallback режим)';
-      proxyMethods = Object.keys((window as any).TelegramWebviewProxy || {});
-    } else {
-      tgApiStatus = 'Telegram WebApp окружение не обнаружено. Откройте через Telegram-клиент.';
-    }
-    setDebug((prev: any) => ({...prev, tgApiStatus, proxyMethods, initData }));
-
-
-
-    // Диагностика: выводим Telegram API в консоль и на экран
-    try {
-      // eslint-disable-next-line no-console
-      console.log('window.Telegram:', window.Telegram);
-      // eslint-disable-next-line no-console
-      console.log('window.Telegram.WebApp:', window.Telegram?.WebApp);
-      (window as any).telegramDebug = {
-        Telegram: window.Telegram,
-        TelegramWebApp: window.Telegram?.WebApp,
-        windowKeys: Object.keys(window),
-      };
-    } catch (e) {}
-
-    try {
-      const win: any = window;
-      const tg = win.Telegram?.WebApp;
-      const tgRaw = win.Telegram;
-      const tgProxy = win.TelegramWebviewProxy;
-      const debugInfo: any = {
-        userAgent: navigator.userAgent,
-        location: window.location.href,
-        referrer: document.referrer,
-        telegramApiPresent: !!tg,
-        telegramApiKeys: tg ? Object.keys(tg) : null,
-        telegramRawType: tgRaw ? getType(tgRaw) : null,
-        telegramRawKeys: tgRaw ? Object.keys(tgRaw) : null,
-        telegramWebviewProxyPresent: !!tgProxy,
-        telegramWebviewProxyType: tgProxy ? getType(tgProxy) : null,
-        telegramWebviewProxyKeys: tgProxy ? Object.keys(tgProxy) : null,
-        windowKeys: Object.keys(window),
-        isIframe: window.self !== window.top,
-      };
-      setDebug(debugInfo);
-      if (!tg && tgProxy) {
-        setStatus('proxy-fallback');
-        setError('WebApp API не найден, но найден TelegramWebviewProxy. Пробую fallback-авторизацию через старый API...');
-        // Попытка получить userId через invoke/sendData (устаревший способ)
-        try {
-          if (typeof tgProxy.postEvent === 'function') {
-            tgProxy.postEvent('web_app_request_data', '{}');
-          } else if (typeof tgProxy.sendData === 'function') {
-            tgProxy.sendData('{}');
-          }
-        } catch (e) {
-          setFallbackResult('Ошибка вызова tgProxy: ' + (e as any).message);
+    let debugInfo: any = {
+      userAgent: navigator.userAgent,
+      location: window.location.href,
+      referrer: document.referrer,
+      telegramWebviewProxyPresent: false,
+      telegramWebviewProxyType: null,
+      telegramWebviewProxyKeys: null,
+      windowKeys: Object.keys(window),
+      isIframe: window.self !== window.top,
+    };
+    if (typeof window !== "undefined" && 'TelegramWebviewProxy' in window) {
+      tgProxy = (window as any).TelegramWebviewProxy;
+      debugInfo.telegramWebviewProxyPresent = true;
+      debugInfo.telegramWebviewProxyType = getType(tgProxy);
+      debugInfo.telegramWebviewProxyKeys = Object.keys(tgProxy || {});
+      setStatus('proxy-fallback');
+      setError('Авторизация через TelegramWebviewProxy...');
+      // Попытка получить userId через invoke/sendData (устаревший способ)
+      try {
+        if (typeof tgProxy.postEvent === 'function') {
+          tgProxy.postEvent('web_app_request_data', '{}');
+        } else if (typeof tgProxy.sendData === 'function') {
+          tgProxy.sendData('{}');
         }
-        // Слушаем ответ от Telegram
-        const handler = (event: MessageEvent) => {
-          if (typeof event.data === 'string' && event.data.startsWith('{')) {
-            try {
-              const data = JSON.parse(event.data);
-              if (data && (data.user || data.user_id)) {
-                setFallbackUserId(data.user_id || data.user?.id || null);
-                setFallbackResult(data);
-                setStatus('proxy-fallback-success');
-                setError(null);
-              }
-            } catch {}
-          }
-        };
-        window.addEventListener('message', handler);
-        return () => window.removeEventListener('message', handler);
+      } catch (e) {
+        setFallbackResult('Ошибка вызова tgProxy: ' + (e as any).message);
       }
-      if (!tg) {
-        setStatus('no-tg');
-        setError('Это приложение должно запускаться только из Telegram WebApp на мобильном устройстве.');
-        return;
-      }
-      setStatus('tg-ok');
-      // Здесь можно добавить логику авторизации и отправки данных на backend
-    } catch (e: any) {
-      setError('Critical error: ' + e.message);
-      setStatus('error');
+      // Слушаем ответ от Telegram
+      const handler = (event: MessageEvent) => {
+        if (typeof event.data === 'string' && event.data.startsWith('{')) {
+          try {
+            const data = JSON.parse(event.data);
+            if (data && (data.user || data.user_id)) {
+              setFallbackUserId(data.user_id || data.user?.id || null);
+              setFallbackResult(data);
+              setStatus('proxy-fallback-success');
+              setError(null);
+            }
+          } catch {}
+        }
+      };
+      window.addEventListener('message', handler);
+      return () => window.removeEventListener('message', handler);
+    } else {
+      setStatus('no-tg-proxy');
+      setError('Ошибка: TelegramWebviewProxy не найден. Откройте через Telegram Desktop.');
     }
+    setDebug(debugInfo);
   }, []);
 
   let statusColor = 'red';

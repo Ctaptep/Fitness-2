@@ -8,6 +8,98 @@ const LoginPage: React.FC = () => {
   const [debug, setDebug] = useState<any>(null);
   const [fallbackUserId, setFallbackUserId] = useState<string | null>(null);
   const [fallbackResult, setFallbackResult] = useState<any>(null);
+  const [windowDump, setWindowDump] = useState<string | null>(null);
+  const [showWindowDump, setShowWindowDump] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => {
+      // Расширенная диагностика
+      console.log('window.Telegram:', window.Telegram);
+      console.log('window.Telegram.WebApp:', window.Telegram?.WebApp);
+      console.log('window.TelegramWebviewProxy:', window.TelegramWebviewProxy);
+      alert(
+        'window.Telegram: ' + (window.Telegram ? 'есть' : 'нет') + '\n' +
+        'window.Telegram.WebApp: ' + (window.Telegram?.WebApp ? 'есть' : 'нет') + '\n' +
+        'window.TelegramWebviewProxy: ' + (window.TelegramWebviewProxy ? 'есть' : 'нет')
+      );
+    }, 1500);
+    // Оригинальная логика
+    let debugInfo: any = {
+      userAgent: navigator.userAgent,
+      location: window.location.href,
+      referrer: document.referrer,
+      telegramWebAppPresent: false,
+      telegramWebAppKeys: null,
+      telegramWebviewProxyPresent: false,
+      telegramWebviewProxyKeys: null,
+      windowKeys: Object.keys(window),
+      isIframe: window.self !== window.top,
+    };
+    const win: any = window;
+    const tgWebApp = win.Telegram?.WebApp;
+    const tgProxy = win.TelegramWebviewProxy;
+    if (tgWebApp) {
+      debugInfo.telegramWebAppPresent = true;
+      debugInfo.telegramWebAppKeys = Object.keys(tgWebApp);
+      setStatus('tg-webapp');
+      setError(null);
+      setDebug((prev: any) => ({ ...prev, tgWebAppInitData: tgWebApp.initData, tgWebAppUser: tgWebApp.initDataUnsafe?.user }));
+    } else if (tgProxy) {
+      debugInfo.telegramWebviewProxyPresent = true;
+      debugInfo.telegramWebviewProxyKeys = Object.keys(tgProxy);
+      setStatus('proxy-fallback');
+      setError('Авторизация через TelegramWebviewProxy...');
+      try {
+        if (typeof tgProxy.postEvent === 'function') {
+          tgProxy.postEvent('web_app_request_data', '{}');
+        } else if (typeof tgProxy.sendData === 'function') {
+          tgProxy.sendData('{}');
+        }
+      } catch (e) {
+        setFallbackResult('Ошибка вызова tgProxy: ' + (e as any).message);
+      }
+      const handler = (event: MessageEvent) => {
+        if (typeof event.data === 'string' && event.data.startsWith('{')) {
+          try {
+            const data = JSON.parse(event.data);
+            if (data && (data.user || data.user_id)) {
+              setFallbackUserId(data.user_id || data.user?.id || null);
+              setFallbackResult(data);
+              setStatus('proxy-fallback-success');
+              setError(null);
+            }
+          } catch {}
+        }
+      };
+      window.addEventListener('message', handler);
+      return () => window.removeEventListener('message', handler);
+    } else {
+      setStatus('no-tg');
+      setError('Ошибка: Не найден Telegram API. Откройте через Telegram-клиент (мобильный или Desktop).');
+    }
+    setDebug(debugInfo);
+  }, []);
+
+  const handleShowWindowDump = () => {
+    if (!windowDump) {
+      try {
+        // Показываем только ключи и типы window для безопасности
+        const dump = Object.fromEntries(
+          Object.entries(window).map(([k, v]) => [k, typeof v])
+        );
+        setWindowDump(JSON.stringify(dump, null, 2));
+      } catch (e) {
+        setWindowDump('Ошибка при дампе window: ' + (e as any).message);
+      }
+    }
+    setShowWindowDump((prev) => !prev);
+  };
+
+  const [status, setStatus] = useState('init');
+  const [error, setError] = useState<string | null>(null);
+  const [debug, setDebug] = useState<any>(null);
+  const [fallbackUserId, setFallbackUserId] = useState<string | null>(null);
+  const [fallbackResult, setFallbackResult] = useState<any>(null);
 
   useEffect(() => {
     // Поддержка и WebApp API (мобильный Telegram), и TelegramWebviewProxy (старый Desktop API)
@@ -75,8 +167,46 @@ const LoginPage: React.FC = () => {
   if (status === 'proxy-no-webapp') statusColor = 'orange';
   if (status === 'proxy-fallback' || status === 'proxy-fallback-success') statusColor = 'orange';
 
+  // --- DIAGNOSTICS BLOCK ---
+  const diag = {
+    telegram: typeof window !== 'undefined' && !!(window as any).Telegram,
+    webapp: typeof window !== 'undefined' && !!((window as any).Telegram?.WebApp),
+    proxy: typeof window !== 'undefined' && !!(window as any).TelegramWebviewProxy,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    location: typeof window !== 'undefined' ? window.location.href : '',
+    referrer: typeof document !== 'undefined' ? document.referrer : '',
+    isIframe: typeof window !== 'undefined' ? window.self !== window.top : false,
+  };
+  const diagText = JSON.stringify(diag, null, 2);
+
+  function handleCopyDiag() {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(diagText);
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = diagText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+  }
+  // --- END DIAGNOSTICS BLOCK ---
+
   return (
     <div style={{ padding: 32, fontFamily: 'sans-serif' }}>
+      {/* Диагностика Telegram API */}
+      <div style={{background: '#f6f8fa', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 15}}>
+        <b>Диагностика Telegram API:</b><br/>
+        window.Telegram: <b style={{color: diag.telegram ? 'green' : 'red'}}>{diag.telegram ? 'есть' : 'нет'}</b><br/>
+        window.Telegram.WebApp: <b style={{color: diag.webapp ? 'green' : 'red'}}>{diag.webapp ? 'есть' : 'нет'}</b><br/>
+        window.TelegramWebviewProxy: <b style={{color: diag.proxy ? 'orange' : 'red'}}>{diag.proxy ? 'есть' : 'нет'}</b><br/>
+        userAgent: <span style={{fontSize: 13}}>{diag.userAgent}</span><br/>
+        location: <span style={{fontSize: 13}}>{diag.location}</span><br/>
+        referrer: <span style={{fontSize: 13}}>{diag.referrer}</span><br/>
+        isIframe: <b>{diag.isIframe ? 'да' : 'нет'}</b><br/>
+        <button style={{marginTop: 8}} onClick={handleCopyDiag}>Скопировать debug</button>
+      </div>
       <h2 style={{ color: '#1976d2', marginBottom: 8 }}>Telegram WebApp Авторизация</h2>
       <div style={{ margin: '16px 0', color: statusColor, fontWeight: 600 }}>
         Статус: {status}

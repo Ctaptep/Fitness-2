@@ -10,19 +10,22 @@ const LoginPage: React.FC = () => {
   const [fallbackResult, setFallbackResult] = useState<any>(null);
 
   useEffect(() => {
-    // Безопасная диагностика наличия Telegram API
-    let tgApiStatus = 'window.Telegram: ';
-    if (typeof window !== "undefined" && 'Telegram' in window) {
-      tgApiStatus += 'есть';
-      if ((window as any).Telegram && (window as any).Telegram.WebApp) {
-        tgApiStatus += ', window.Telegram.WebApp: есть';
-      } else {
-        tgApiStatus += ', window.Telegram.WebApp: нет';
-      }
+    // Расширенная диагностика Telegram WebApp окружения
+    let tgApiStatus = '';
+    let proxyMethods: string[] = [];
+    let initData = null;
+    if (typeof window !== "undefined" && 'Telegram' in window && (window as any).Telegram?.WebApp) {
+      tgApiStatus = 'WebApp API найден';
+      initData = (window as any).Telegram.WebApp.initData;
+    } else if (typeof window !== "undefined" && 'TelegramWebviewProxy' in window) {
+      tgApiStatus = 'WebApp API не найден, но найден TelegramWebviewProxy (fallback режим)';
+      proxyMethods = Object.keys((window as any).TelegramWebviewProxy || {});
     } else {
-      tgApiStatus += 'нет';
+      tgApiStatus = 'Telegram WebApp окружение не обнаружено. Откройте через Telegram-клиент.';
     }
-    setDebug((prev: any) => ({...prev, tgApiStatus }));
+    setDebug((prev: any) => ({...prev, tgApiStatus, proxyMethods, initData }));
+
+
 
     // Диагностика: выводим Telegram API в консоль и на экран
     try {
@@ -128,6 +131,16 @@ const LoginPage: React.FC = () => {
       <div style={{marginTop: 10, color: '#a67c00', fontSize: 15}}>
         {debug?.tgApiStatus}
       </div>
+      {debug?.initData && (
+        <div style={{marginTop: 10, color: '#007c3a', fontSize: 13}}>
+          <b>initData:</b> {String(debug.initData)}
+        </div>
+      )}
+      {debug?.proxyMethods && debug.proxyMethods.length > 0 && (
+        <div style={{marginTop: 10, color: '#a67c00', fontSize: 13}}>
+          <b>Proxy methods:</b> {debug.proxyMethods.join(", ")}
+        </div>
+      )}
       <div style={{marginTop: 24, color: '#888', fontSize: 13}}>
         Запустите через Telegram-бота, чтобы увидеть полноценную авторизацию. <br />
         Если статус orange — TelegramWebviewProxy найден, но WebApp API нет (старый клиент или ограничения Telegram).<br />

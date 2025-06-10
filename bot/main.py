@@ -85,7 +85,7 @@ def generate_nutrition_plan(calories, meals):
 @router.message(Command('start'))
 async def cmd_start(message: types.Message):
     from aiogram.types import WebAppInfo
-    webapp_url = "https://fitness-2-fa7i.vercel.app"
+    webapp_url = "https://fitness-lilac-phi.vercel.app"
     kb = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="Открыть WebApp", web_app=WebAppInfo(url=webapp_url))],

@@ -144,8 +144,27 @@ const LoginPage: React.FC = () => {
       <div style={{marginTop: 24, color: '#888', fontSize: 13}}>
         Запустите через Telegram-бота, чтобы увидеть полноценную авторизацию. <br />
         Если статус orange — TelegramWebviewProxy найден, но WebApp API нет (старый клиент или ограничения Telegram).<br />
-        Fallback-режим: если получен userId, авторизация возможна через старый API (но не все функции WebApp будут работать).
+        Fallback-режим: если получен userId, авторизация возможна через старый API (но не все функции WebApp будут работать).<br />
       </div>
+      {(!debug?.tgApiStatus || debug?.tgApiStatus.includes('не обнаружено')) && (
+        <div style={{marginTop: 32}}>
+          <a
+            href="https://oauth.telegram.org/auth?bot_id=6469783217&origin=https://www.korobanov-roman.ru&embed=0"
+            style={{
+              display: 'inline-block',
+              padding: '12px 24px',
+              background: '#229ED9',
+              color: '#fff',
+              borderRadius: 8,
+              fontWeight: 600,
+              textDecoration: 'none',
+              fontSize: 18
+            }}
+          >
+            Войти через Telegram
+          </a>
+        </div>
+      )}
     </div>
   );
 };

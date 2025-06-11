@@ -3,11 +3,11 @@ import hmac
 import time
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models import User
-from schemas import TelegramAuthRequest
-from deps import get_db
-from auth import create_access_token
-from schemas import UserOut
+from webadmin.backend import models, schemas, crud
+from webadmin.backend.schemas import TelegramAuthRequest
+from webadmin.backend.deps import get_db
+from webadmin.backend.auth import create_access_token
+from webadmin.backend.schemas import UserOut
 import os
 
 router = APIRouter()
@@ -24,7 +24,7 @@ def check_telegram_auth(data: dict, bot_token: str) -> bool:
     return hmac_hash == hash_
 
 from fastapi import Body, Request
-from schemas import TelegramAuthRequest
+from webadmin.backend.schemas import TelegramAuthRequest
 
 import datetime
 
@@ -49,5 +49,5 @@ def telegram_auth(payload: TelegramAuthRequest = Body(...), db: Session = Depend
         db.commit()
         db.refresh(user)
     access_token = create_access_token({"sub": user.username})
-    from schemas import UserOut
+    from webadmin.backend.schemas import UserOut
     return {"access_token": access_token, "user": UserOut.from_orm(user)}

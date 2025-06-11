@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
-const api = axios.create({
-  baseURL: (import.meta as any).env?.REACT_APP_API_URL || '',
+const api: AxiosInstance = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || '',
   withCredentials: true,
 });
 
@@ -29,4 +29,23 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Экземпляр axios для работы с API
+ */
 export default api;
+/**
+ * Выполнить GET-запрос (мокается в тестах через jest.spyOn(get))
+ */
+export const get = api.get.bind(api);
+/**
+ * Выполнить POST-запрос (мокается в тестах через jest.spyOn(post))
+ */
+export const post = api.post.bind(api);
+/**
+ * Выполнить PUT-запрос (мокается в тестах через jest.spyOn(put))
+ */
+export const put = api.put.bind(api);
+/**
+ * Выполнить DELETE-запрос (мокается в тестах через jest.spyOn(del))
+ */
+export const del = api.delete.bind(api);

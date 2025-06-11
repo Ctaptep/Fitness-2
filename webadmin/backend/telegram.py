@@ -1,8 +1,9 @@
 import requests
 from fastapi import APIRouter, HTTPException
-from models import User
-from schemas import TelegramAuthRequest
-from deps import get_db
+from webadmin.backend import crud, models, schemas
+from webadmin.backend.models import User
+from webadmin.backend.schemas import TelegramAuthRequest
+from webadmin.backend.deps import get_db
 
 router = APIRouter()
 

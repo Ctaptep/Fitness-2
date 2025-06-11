@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 const LoginPage: React.FC = () => {
-  // Таймер для очистки
   const timeoutId = React.useRef<number | null>(null);
-  // Состояния компонента
   const [status, setStatus] = useState('init');
   const [error, setError] = useState<string | null>(null);
   const [debug, setDebug] = useState<any>(null);
@@ -13,7 +11,6 @@ const LoginPage: React.FC = () => {
   const [showWindowDump, setShowWindowDump] = useState(false);
 
   useEffect(() => {
-    // Основная логика инициализации
     const initAuth = () => {
       const debugInfo: any = {
         userAgent: navigator.userAgent,
@@ -31,31 +28,28 @@ const LoginPage: React.FC = () => {
       const win = window as any;
       const tgWebApp = win.Telegram?.WebApp;
       const tgProxy = win.TelegramWebviewProxy;
-      
+
       let messageHandler: ((event: MessageEvent) => void) | null = null;
 
       if (tgWebApp) {
-        // Режим Telegram WebApp (современные клиенты)
         debugInfo.telegramWebAppPresent = true;
         debugInfo.telegramWebAppKeys = Object.keys(tgWebApp);
         debugInfo.tgWebAppInitData = tgWebApp.initData;
         debugInfo.tgWebAppUser = tgWebApp.initDataUnsafe?.user;
-        
+
         setStatus('tg-webapp');
         setError(null);
         setDebug(debugInfo);
-        
+
       } else if (tgProxy) {
-        // Fallback-режим для старых клиентов
         debugInfo.telegramWebviewProxyPresent = true;
         debugInfo.telegramWebviewProxyKeys = Object.keys(tgProxy);
-        
+
         setStatus('proxy-fallback');
         setError('Авторизация через TelegramWebviewProxy...');
         setDebug(debugInfo);
-        
+
         try {
-          // Попытка запроса данных через разные методы прокси
           if (typeof tgProxy.postEvent === 'function') {
             tgProxy.postEvent('web_app_request_data', '{}');
           } else if (typeof tgProxy.sendData === 'function') {
@@ -65,7 +59,6 @@ const LoginPage: React.FC = () => {
           setFallbackResult('Ошибка вызова tgProxy: ' + (e as Error).message);
         }
 
-        // Обработчик ответа от Telegram
         messageHandler = (event: MessageEvent) => {
           try {
             if (typeof event.data === 'string' && event.data.trim().startsWith('{')) {
@@ -82,11 +75,10 @@ const LoginPage: React.FC = () => {
             console.error('Ошибка парсинга сообщения:', parseError);
           }
         };
-        
+
         window.addEventListener('message', messageHandler);
-        
+
       } else {
-        // Telegram API не обнаружен
         setStatus('no-tg');
         setError('Ошибка: Не найден Telegram API. Откройте через Telegram-клиент (мобильный или Desktop).');
         setDebug(debugInfo);
@@ -95,7 +87,6 @@ const LoginPage: React.FC = () => {
 
     initAuth();
 
-    // Очистка эффекта
     return () => {
       if (timeoutId.current) {
         clearTimeout(timeoutId.current);
@@ -103,7 +94,6 @@ const LoginPage: React.FC = () => {
     };
   }, []);
 
-  // Обработчик показа дампа window
   const handleShowWindowDump = () => {
     if (!windowDump) {
       try {
@@ -123,7 +113,6 @@ const LoginPage: React.FC = () => {
     setShowWindowDump(!showWindowDump);
   };
 
-  // Диагностические данные для отображения
   const diag = {
     telegram: !!(window as any).Telegram,
     webapp: !!((window as any).Telegram?.WebApp),
@@ -133,10 +122,9 @@ const LoginPage: React.FC = () => {
     referrer: document.referrer,
     isIframe: window.self !== window.top,
   };
-  
+
   const diagText = JSON.stringify(diag, null, 2);
 
-  // Копирование диагностической информации
   const handleCopyDiag = () => {
     navigator.clipboard.writeText(diagText).catch(() => {
       const textarea = document.createElement('textarea');
@@ -148,12 +136,10 @@ const LoginPage: React.FC = () => {
     });
   };
 
-  // Определение цвета статуса
-  const statusColor = 
+  const statusColor =
     status === 'tg-webapp' ? 'green' :
-    status.includes('proxy') ? 'orange' : 'red';
+      status.includes('proxy') ? 'orange' : 'red';
 
-  // Основной UI приложения для авторизованных пользователей:
   return (
     <div style={{
       padding: 32,
@@ -173,30 +159,66 @@ const LoginPage: React.FC = () => {
           marginLeft: 8
         }}></span>
       </h2>
-      <div style={{ margin: '16px 0', color: statusColor, fontWeight: 600, fontSize: 18 }}>
+      <p>Вы успешно авторизованы через Telegram.</p>
+
+      <div style={{
+        margin: '16px 0',
+        color: statusColor,
+        fontWeight: 600,
+        fontSize: 18
+      }}>
         Статус: {status}
       </div>
+
       {error && (
-        <div style={{ background: '#fff6f6', padding: 12, borderRadius: 8, borderLeft: `4px solid ${statusColor}`, marginBottom: 16 }}>
+        <div style={{
+          background: '#fff6f6',
+          padding: 12,
+          borderRadius: 8,
+          borderLeft: `4px solid ${statusColor}`,
+          marginBottom: 16
+        }}>
           <div style={{ fontWeight: 600, marginBottom: 4 }}>Ошибка:</div>
           <div>{error}</div>
         </div>
       )}
+
       {fallbackUserId && (
-        <div style={{ background: '#f0fff4', padding: 12, borderRadius: 8, borderLeft: '4px solid #38a169', marginBottom: 16 }}>
+        <div style={{
+          background: '#f0fff4',
+          padding: 12,
+          borderRadius: 8,
+          borderLeft: '4px solid #38a169',
+          marginBottom: 16
+        }}>
           <div style={{ fontWeight: 600, color: '#2f855a' }}>
             [Fallback] Успешная авторизация
           </div>
-          <div>ID пользователя: {fallbackUserId}</div>
+          <div>User ID: <strong>{fallbackUserId}</strong></div>
         </div>
       )}
-      {/* Здесь разместите основной функционал приложения */}
+
+      {fallbackResult && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Данные авторизации:</div>
+          <pre style={{
+            background: '#f0fff4',
+            padding: 12,
+            borderRadius: 8,
+            fontSize: 14,
+            overflowX: 'auto',
+            maxHeight: 300
+          }}>
+            {JSON.stringify(fallbackResult, null, 2)}
+          </pre>
+        </div>
+      )}
 
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontWeight: 600, marginBottom: 8 }}>Отладочная информация:</div>
-        <pre style={{ 
-          background: '#f8f9fa', 
-          padding: 16, 
+        <pre style={{
+          background: '#f8f9fa',
+          padding: 16,
           borderRadius: 8,
           fontSize: 14,
           overflowX: 'auto',
@@ -210,7 +232,7 @@ const LoginPage: React.FC = () => {
       {debug?.tgWebAppInitData && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 600 }}>Init Data:</div>
-          <div style={{ 
+          <div style={{
             wordBreak: 'break-all',
             fontSize: 14,
             padding: 12,
@@ -226,7 +248,7 @@ const LoginPage: React.FC = () => {
       {debug?.telegramWebviewProxyKeys && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 600 }}>Доступные методы прокси:</div>
-          <div style={{ 
+          <div style={{
             display: 'flex',
             flexWrap: 'wrap',
             gap: 8,
@@ -238,42 +260,32 @@ const LoginPage: React.FC = () => {
                 background: '#fff3e0',
                 borderRadius: 4,
                 fontSize: 13
-              }}>{key}</span>
+              }}>
+                {key}
+              </span>
             ))}
           </div>
         </div>
       )}
-    </div>
-            }}>
-              {debug.telegramWebviewProxyKeys.map((key: string) => (
-                <span key={key} style={{
-                  padding: '4px 8px',
-                  background: '#fff3e0',
-                  borderRadius: 4,
-                  fontSize: 13
-                }}>
-                  {key}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
-        <div style={{ 
-          background: '#f8f9fa',
-          padding: 16,
-          borderRadius: 8,
-          fontSize: 14,
-          borderLeft: '3px solid #4a5568'
-        }}>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Инструкция:</div>
-          <ul style={{ paddingLeft: 20, margin: 0 }}>
+      <div style={{
+        background: '#f8f9fa',
+        padding: 16,
+        borderRadius: 8,
+        fontSize: 14,
+        borderLeft: '3px solid #4a5568'
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: 8 }}>Инструкция:</div>
+        <ul style={{ paddingLeft: 20, margin: 0 }}>
+          <li>Перейдите по кнопке выше (или найдите вашего бота в Telegram).</li>
+          <li>Нажмите кнопку <b>“Открыть WebApp”</b> в сообщении от бота.</li>
+          <li>Мини-приложение откроется внутри Telegram с поддержкой всех функций.</li>
+        </ul>
+        <div style={{ marginTop: 12, fontSize: 15, color: '#c53030' }}>
+          Если вы открываете сайт вручную или через web.telegram.org — Telegram API работать не будет!
+        </div>
       </div>
-    );
-  }
 
-  return (
-    <div>
       {status === 'no-tg' && (
         <div style={{ textAlign: 'center', marginTop: 32 }}>
           <a
@@ -299,30 +311,6 @@ const LoginPage: React.FC = () => {
           >
             ОТКРЫТЬ ЧЕРЕЗ TELEGRAM-БОТА
           </a>
-          <div style={{
-            margin: '24px auto',
-            maxWidth: 450,
-            background: '#fffbe6',
-            border: '2px solid #ffd700',
-            borderRadius: 12,
-            padding: 18,
-            color: '#b7791f',
-            fontSize: 18,
-            fontWeight: 600,
-            lineHeight: 1.5
-          }}>
-            <b>Внимание!</b><br/>
-            Для работы мини-приложения откройте его <u>только через кнопку</u> в Telegram-боте.<br/>
-            <br/>
-            <ol style={{textAlign:'left', margin:'12px auto 0', paddingLeft: 24}}>
-              <li>Перейдите по кнопке выше (или найдите вашего бота в Telegram).</li>
-              <li>Нажмите кнопку <b>“Открыть WebApp”</b> в сообщении от бота.</li>
-              <li>Мини-приложение откроется внутри Telegram с поддержкой всех функций.</li>
-            </ol>
-            <div style={{marginTop:12, fontSize:15, color:'#c53030'}}>
-              Если вы открываете сайт вручную или через web.telegram.org — Telegram API работать не будет!
-            </div>
-          </div>
         </div>
       )}
     </div>

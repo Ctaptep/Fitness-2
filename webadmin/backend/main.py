@@ -2,13 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.openapi.docs import get_swagger_ui_html
-from db import engine, SessionLocal, Base
+from webadmin.backend.db import engine, SessionLocal, Base
 
-from routes import router as crud_router
-from auth_routes import router as auth_router
-from telegram import router as telegram_router
-from db import Base
-from telegram_auth import router as telegram_auth_router
+from webadmin.backend.routes import router as crud_router
+from webadmin.backend.auth_routes import router as auth_router
+from webadmin.backend.telegram import router as telegram_router
+from webadmin.backend.db import Base
+from webadmin.backend.telegram_auth import router as telegram_auth_router
 
 app = FastAPI(title="Fitness Webadmin Backend")
 

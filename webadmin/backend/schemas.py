@@ -10,6 +10,14 @@ class UserBase(BaseModel):
     is_premium: Optional[int] = 0
     avatar: Optional[str] = None
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    is_active: Optional[int] = None
+    is_premium: Optional[int] = None
+    avatar: Optional[str] = None
+
 class UserCreate(UserBase):
     password: str
 
@@ -20,6 +28,11 @@ class UserOut(UserBase):
 
 class WorkoutBase(BaseModel):
     name: str
+    description: Optional[str] = None
+    date: Optional[datetime.datetime] = None
+
+class WorkoutUpdate(BaseModel):
+    name: Optional[str] = None
     description: Optional[str] = None
     date: Optional[datetime.datetime] = None
 
@@ -34,6 +47,10 @@ class WorkoutOut(WorkoutBase):
 
 class NutritionPlanBase(BaseModel):
     name: str
+    description: Optional[str] = None
+
+class NutritionPlanUpdate(BaseModel):
+    name: Optional[str] = None
     description: Optional[str] = None
 
 class NutritionPlanCreate(NutritionPlanBase):
@@ -57,6 +74,9 @@ class ReportOut(ReportBase):
     user_id: int
     class Config:
         orm_mode = True
+
+class ReportUpdate(BaseModel):
+    report_text: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str

@@ -1,4 +1,4 @@
-from db import SessionLocal
+from webadmin.backend.db import SessionLocal
 from fastapi import Depends
 from sqlalchemy.orm import Session
 

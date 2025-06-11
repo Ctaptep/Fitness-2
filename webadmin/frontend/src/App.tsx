@@ -1,17 +1,33 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import MainLayout from './layout/MainLayout';
+import LoginPage from './pages/LoginPage';
+import Workouts from './pages/Workouts';
+import Nutrition from './pages/Nutrition';
+import Reports from './pages/Reports';
+import Clients from './pages/Clients';
 
-import LoginPage from './pages/LoginPage.tsx';
-
-// Deployment test: minor change by developer
 function App() {
+  // TODO: заменить на реальную авторизацию
+  const isLoggedIn = true;
+
   return (
-    <div>
-      <LoginPage />
-      {/* Deployment test: Vercel redeploy triggered */}
-      <div style={{textAlign: 'center', color: '#4caf50', marginTop: 16}}>
-        Deployment test: Vercel redeploy triggered
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        {isLoggedIn ? (
+          <Route element={<MainLayout>}>
+            <Route path="/" element={<Navigate to="/workouts" replace />} />
+            <Route path="/workouts" element={<Workouts />} />
+            <Route path="/nutrition" element={<Nutrition />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/clients" element={<Clients />} />
+          </Route>
+        ) : (
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        )}
+      </Routes>
+    </BrowserRouter>
   );
 }
 

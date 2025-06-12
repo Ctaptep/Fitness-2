@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
+import { useNavigate } from 'react-router-dom';
+
 const LoginPage: React.FC = () => {
   const timeoutId = React.useRef<number | null>(null);
   const [status, setStatus] = useState('init');
@@ -9,6 +11,14 @@ const LoginPage: React.FC = () => {
   const [fallbackResult, setFallbackResult] = useState<any>(null);
   const [windowDump, setWindowDump] = useState<string | null>(null);
   const [showWindowDump, setShowWindowDump] = useState(false);
+  const navigate = useNavigate();
+
+  // Редирект после успешной Telegram-авторизации
+  React.useEffect(() => {
+    if (status === 'tg-webapp' && localStorage.getItem('token')) {
+      navigate('/webapp');
+    }
+  }, [status, navigate]);
 
   useEffect(() => {
     const initAuth = () => {

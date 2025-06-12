@@ -47,9 +47,40 @@ const LoginPage: React.FC = () => {
         debugInfo.tgWebAppInitData = tgWebApp.initData;
         debugInfo.tgWebAppUser = tgWebApp.initDataUnsafe?.user;
 
-        setStatus('tg-webapp');
-        setError(null);
-        setDebug(debugInfo);
+        // Новый функционал: авторизация через backend
+        const initData = tgWebApp.initData;
+        if (initData) {
+          fetch(process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL + '/telegram_auth' : '/telegram_auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData }),
+          })
+            .then(async (res) => {
+              if (!res.ok) throw new Error('Ошибка авторизации через Telegram');
+              return res.json();
+            })
+            .then((data) => {
+              if (data.token) {
+                localStorage.setItem('token', data.token);
+                setStatus('tg-webapp');
+                setError(null);
+                setDebug(debugInfo);
+                navigate('/webapp');
+              } else {
+                setError('Ошибка авторизации: не получен токен');
+                setDebug(debugInfo);
+              }
+            })
+            .catch((e) => {
+              setError('Ошибка авторизации: ' + e.message);
+              setDebug(debugInfo);
+            });
+        } else {
+          setError('Ошибка: отсутствует initData из Telegram WebApp');
+          setDebug(debugInfo);
+        }
+        // Конец нового функционала
+        return;
 
       } else if (tgProxy) {
         debugInfo.telegramWebviewProxyPresent = true;

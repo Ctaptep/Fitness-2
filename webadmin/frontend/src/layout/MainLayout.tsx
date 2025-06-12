@@ -1,7 +1,6 @@
 import React from 'react';
 import {
-  AppBar, Toolbar, Typography, Drawer, List, ListItem,
-  ListItemIcon, ListItemText, Box, CssBaseline, IconButton
+  AppBar, Toolbar, Typography, Drawer, List, ListItem, ListItemIcon, ListItemText, Box, CssBaseline, IconButton, ListItemButton
 } from '@mui/material';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
@@ -33,17 +32,17 @@ export default function MainLayout() {
       <Toolbar />
       <List>
         {navItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            selected={location.pathname.startsWith(item.path)}
-            onClick={() => {
-              navigate(item.path);
-              setMobileOpen(false);
-            }}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              selected={location.pathname.startsWith(item.path)}
+              onClick={() => {
+                navigate(item.path);
+                setMobileOpen(false);
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>

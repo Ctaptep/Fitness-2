@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api';
+import { SnackbarAlert } from '../components/LoaderSnackbar';
 
 interface Client {
   id: number;
@@ -17,23 +18,22 @@ interface TelegramMessageFormProps {
 const TelegramMessageForm: React.FC<TelegramMessageFormProps> = ({ clients }) => {
   const [selected, setSelected] = useState<number | null>(null);
   const [message, setMessage] = useState('');
-  const [status, setStatus] = useState<string>('');
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [loading, setLoading] = useState(false);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('');
     if (!selected || !message.trim()) {
-      setStatus('Выберите клиента и введите сообщение');
+      setSnackbar({ open: true, message: 'Выберите клиента и введите сообщение', severity: 'error' });
       return;
     }
     setLoading(true);
     try {
       await api.post('/send_telegram_message', { user_id: selected, message });
-      setStatus('Сообщение отправлено!');
+      setSnackbar({ open: true, message: 'Сообщение отправлено!', severity: 'success' });
       setMessage('');
     } catch (e: any) {
-      setStatus(e?.response?.data?.detail || 'Ошибка отправки');
+      setSnackbar({ open: true, message: e?.response?.data?.detail || 'Ошибка отправки', severity: 'error' });
     }
     setLoading(false);
   };
@@ -55,7 +55,12 @@ const TelegramMessageForm: React.FC<TelegramMessageFormProps> = ({ clients }) =>
       <button type="submit" disabled={loading} style={{ marginLeft: 8 }}>
         {loading ? 'Отправка...' : 'Отправить'}
       </button>
-      {status && <div style={{ color: status.includes('Ошибка') ? 'red' : 'green', marginTop: 8 }}>{status}</div>}
+      <SnackbarAlert
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      />
     </form>
   );
 };

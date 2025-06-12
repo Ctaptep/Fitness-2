@@ -45,7 +45,6 @@ describe('Clients page', () => {
       },
       writable: true
     });
-    delete window.location;
     window.location = { href: '', assign: jest.fn() } as any;
     console.log('beforeEach: window.confirm, localStorage, location mocked');
   });

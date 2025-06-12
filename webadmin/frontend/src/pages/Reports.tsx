@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { TextField, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { SnackbarAlert } from '../components/LoaderSnackbar';
 
 interface Report {
   id: number;
@@ -13,6 +15,7 @@ const Reports: React.FC = () => {
   const [filter, setFilter] = useState('');
   const [form, setForm] = useState<Omit<Report, 'id' | 'created_at'>>({ report_text: '', user_id: 1 });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [error, setError] = useState<string>('');
 
   const fetchReports = () => {
@@ -31,22 +34,23 @@ const Reports: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     if (!form.report_text.trim()) {
-      setError('Заполните текст отчета');
+      setSnackbar({ open: true, message: 'Заполните текст отчета', severity: 'error' });
       return;
     }
     try {
       if (editingId) {
         await api.put(`/reports/${editingId}`, { ...form });
         setEditingId(null);
+        setSnackbar({ open: true, message: 'Отчет обновлен', severity: 'success' });
       } else {
         await api.post('/reports', { ...form });
+        setSnackbar({ open: true, message: 'Отчет добавлен', severity: 'success' });
       }
       setForm({ report_text: '', user_id: 1 });
       fetchReports();
     } catch {
-      setError('Ошибка сохранения');
+      setSnackbar({ open: true, message: 'Ошибка сохранения', severity: 'error' });
     }
   };
 
@@ -61,52 +65,76 @@ const Reports: React.FC = () => {
     try {
       await api.delete(`/reports/${id}`);
       fetchReports();
+      setSnackbar({ open: true, message: 'Отчет удален', severity: 'success' });
     } catch {
-      setError('Ошибка удаления');
+      setSnackbar({ open: true, message: 'Ошибка удаления', severity: 'error' });
     }
   };
 
   return (
-    <div>
+    <Paper sx={{ p: 3 }}>
       <h2>Отчеты</h2>
-      <input placeholder="Фильтр по тексту" value={filter} onChange={e => setFilter(e.target.value)} />
-      {error && <div style={{ color: 'red', margin: '8px 0' }}>{error}</div>}
-      <form onSubmit={handleSubmit} style={{ margin: '16px 0' }}>
-        <textarea
+      <TextField
+        label="Фильтр по тексту"
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+        size="small"
+        sx={{ mb: 2 }}
+      />
+      <form onSubmit={handleSubmit} style={{ margin: '16px 0', display: 'flex', gap: 16, alignItems: 'center' }}>
+        <TextField
           name="report_text"
-          placeholder="Текст отчета"
+          label="Текст отчета"
           value={form.report_text}
-          onChange={handleChange}
+          onChange={e => setForm({ ...form, report_text: e.target.value })}
+          size="small"
+          multiline
+          minRows={2}
+          sx={{ flex: 1 }}
         />
-        <button type="submit">{editingId ? 'Сохранить' : 'Добавить'}</button>
-        {editingId && <button type="button" onClick={() => { setForm({ report_text: '', user_id: 1 }); setEditingId(null); }}>Отмена</button>}
+        <Button type="submit" variant="contained" color="primary">
+          {editingId ? 'Сохранить' : 'Добавить'}
+        </Button>
+        {editingId && (
+          <Button type="button" variant="outlined" color="secondary" onClick={() => { setForm({ report_text: '', user_id: 1 }); setEditingId(null); }}>
+            Отмена
+          </Button>
+        )}
       </form>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Текст отчета</th>
-            <th>Пользователь</th>
-            <th>Создан</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map(r => (
-            <tr key={r.id}>
-              <td>{r.id}</td>
-              <td>{r.report_text}</td>
-              <td>{r.user_id}</td>
-              <td>{r.created_at}</td>
-              <td>
-                <button onClick={() => handleEdit(r)}>Редактировать</button>
-                <button onClick={() => handleDelete(r.id)}>Удалить</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <TableContainer component={Paper} sx={{ mt: 2 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Текст отчета</TableCell>
+              <TableCell>Пользователь</TableCell>
+              <TableCell>Создан</TableCell>
+              <TableCell>Действия</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filtered.map(r => (
+              <TableRow key={r.id}>
+                <TableCell>{r.id}</TableCell>
+                <TableCell>{r.report_text}</TableCell>
+                <TableCell>{r.user_id}</TableCell>
+                <TableCell>{r.created_at}</TableCell>
+                <TableCell>
+                  <Button size="small" variant="outlined" onClick={() => handleEdit(r)} sx={{ mr: 1 }}>Редактировать</Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => handleDelete(r.id)}>Удалить</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <SnackbarAlert
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+      />
+    </Paper>
   );
 };
 

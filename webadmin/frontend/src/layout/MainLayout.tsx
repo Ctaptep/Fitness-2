@@ -1,11 +1,14 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Drawer, List, ListItem, ListItemIcon, ListItemText, Box, CssBaseline, IconButton } from '@mui/material';
+import {
+  AppBar, Toolbar, Typography, Drawer, List, ListItem,
+  ListItemIcon, ListItemText, Box, CssBaseline, IconButton
+} from '@mui/material';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 
 const drawerWidth = 220;
 
@@ -16,7 +19,7 @@ const navItems = [
   { text: 'Клиенты', icon: <PeopleIcon />, path: '/clients' },
 ];
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function MainLayout() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,7 +108,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         }}
       >
         <Toolbar />
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );

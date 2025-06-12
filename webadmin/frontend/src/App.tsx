@@ -8,7 +8,6 @@ import Reports from './pages/Reports';
 import Clients from './pages/Clients';
 
 function App() {
-  // TODO: заменить на реальную авторизацию
   const isLoggedIn = true;
 
   return (
@@ -16,7 +15,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         {isLoggedIn ? (
-          <Route element={<MainLayout>}>
+          <Route element={<MainLayout />}>
             <Route path="/" element={<Navigate to="/workouts" replace />} />
             <Route path="/workouts" element={<Workouts />} />
             <Route path="/nutrition" element={<Nutrition />} />
